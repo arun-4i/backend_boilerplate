@@ -21,6 +21,10 @@ export class UserService {
   async findByEmail(email: string): Promise<User | null> {
     return userRepository.findByEmail(email);
   }
+
+  async getAllUsers(): Promise<User[]> {
+    return userRepository.getAllUsers();
+  }
 }
 
 export const userService = new UserService();

@@ -14,11 +14,9 @@ import {
   jsonBodyParserOptions,
   urlencodedBodyParserOptions,
 } from "@config/express/bodyParserConfig";
-import {
-  notFoundHandler,
-  globalErrorHandler,
-} from "@config/express/errorHandlers";
+
 import router from "@routes/index";
+import { errorHandler, notFoundHandler } from "@utils/error";
 
 export const createApp = (): Application => {
   const app = express();
@@ -78,9 +76,9 @@ export const createApp = (): Application => {
   });
 
   // 404 HANDLER
-  app.use(notFoundHandler(baseUrl));
+  app.use(notFoundHandler)
   // GLOBAL ERROR HANDLER
-  app.use(globalErrorHandler);
+  app.use(errorHandler);
   // APPLICATION READY
 
   logger.info("system", "Express application initialized successfully", {

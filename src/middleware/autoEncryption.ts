@@ -445,13 +445,18 @@ export const requestLogger = (
 // CENTRAL AUTO-PROTECTION MIDDLEWARE
 // ========================================
 const unprotectedRoutes = [
-  "/api/user/register"
+  "/api/user/register",
+  "/api/user/login",
+  "/api/health",
+  "/api/health/detailed",
 ];
 
 export function autoProtect(req: Request, res: Response, next: NextFunction) {
-    // Make any route starting with /auth or /auth/ unprotected
-    // console.log("req path: ", req.path, req.path.startsWith("/api/auth/"));
-  const isUnprotected = unprotectedRoutes.some(route => req.path.includes(route))
+  // Make any route starting with /auth or /auth/ unprotected
+  // console.log("req path: ", req.path, req.path.startsWith("/api/auth/"));
+  const isUnprotected = unprotectedRoutes.some((route) =>
+    req.path.includes(route)
+  );
   if (isUnprotected) {
     // Call unprotectedRoute middleware
     return unprotectedRoute(req, res, next);

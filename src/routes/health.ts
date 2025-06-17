@@ -6,7 +6,7 @@ import { logger } from "@utils/logger";
 const router = Router();
 
 // Health check route
-router.get("/health", unprotectedRoute, (req, res) => {
+router.get("/", unprotectedRoute, (req, res) => {
   const healthStatus = {
     success: true,
     status: "healthy",
@@ -29,7 +29,7 @@ router.get("/health", unprotectedRoute, (req, res) => {
 });
 
 // Detailed health check with crypto service status
-router.get("/health/detailed", unprotectedRoute, async (req, res) => {
+router.get("/detailed", unprotectedRoute, async (req, res) => {
   try {
     const { jwtCryptoService } = await import("../utils/crypto");
     const cryptoHealth = jwtCryptoService.getHealthStatus();

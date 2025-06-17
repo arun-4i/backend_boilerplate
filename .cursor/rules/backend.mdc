@@ -1,5 +1,5 @@
 ---
-description: 
+description: This project outlines the development of an enterprise-grade backend system using Node.js (Express) and TypeScript, focusing on security, performance, and scalability. It employs a monolithic architecture with clear separation between Controllers, Services, and Repositories.  Key features include:  AES+RSA encryption for secure communication and data handling.  JWT authentication with RBAC and rate limiting.  Sequelize ORM for database management (supporting Oracle, MySQL, MSSQL) with connection pooling and transaction support.  Comprehensive error handling and structured logging using Winston.  Swagger/OpenAPI documentation for API specifications.  Audit logging for tracking CRUD operations and retention of logs for compliance.  WebSocket support with encrypted messaging and JWT authentication.  The project ensures best practices in security, performance optimization, and maintainability, including in-memory caching, message queuing with Kafka, file encryption, and health check endpoints. It also adheres to SOLID principles, DRY practices, and provides a solid foundation for scalable enterprise systems.
 globs: 
 alwaysApply: false
 ---
