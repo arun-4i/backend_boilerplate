@@ -1,5 +1,5 @@
 ---
-description: This project outlines the development of an enterprise-grade backend system using Node.js (Express) and TypeScript, focusing on security, performance, and scalability. It employs a monolithic architecture with clear separation between Controllers, Services, and Repositories.  Key features include:  AES+RSA encryption for secure communication and data handling.  JWT authentication with RBAC and rate limiting.  Sequelize ORM for database management (supporting Oracle, MySQL, MSSQL) with connection pooling and transaction support.  Comprehensive error handling and structured logging using Winston.  Swagger/OpenAPI documentation for API specifications.  Audit logging for tracking CRUD operations and retention of logs for compliance.  WebSocket support with encrypted messaging and JWT authentication.  The project ensures best practices in security, performance optimization, and maintainability, including in-memory caching, message queuing with Kafka, file encryption, and health check endpoints. It also adheres to SOLID principles, DRY practices, and provides a solid foundation for scalable enterprise systems.
+description: This document codifies the definitive development standard for this project's enterprise-grade Node.js backend. It serves as the authoritative blueprint that the AI must automatically fetch and apply to every development task. By defining everything from high-level architecture (Controller-Service-Repository) to granular code-level and security requirements (SonarQube compliance, ES2020, end-to-end encryption), this rulebook ensures all generated code is consistent, secure, and production-ready without needing repeated clarification. It covers the complete technology stack (Express, TypeScript, Sequelize), mandates specific project structure, error handling patterns, logging standards, and even includes a framework for how new feature requests should be specified. It is the single source of truth for all backend development.
 globs: 
 alwaysApply: false
 ---
@@ -15,26 +15,7 @@ You are a Senior Staff Engineer with 15+ years of experience in building enterpr
 - **ORM**: Sequelize with TypeScript support
 - **Database**: Support for Oracle, MySQL, and MSSQL (configurable via environment)
 - **Architecture**: Monolithic with clean separation of concerns
-- **API Type**: RESTful API with OpenAPI/Swagger documentation
-
-### Security Requirements
-1. **Encryption**: 
-   - Implement AES+RSA encryption for all API endpoints except login
-   - RSA keys generated on application startup (backend only)
-   - AES keys rotated per request
-   - Dynamic AES key encrypted with RSA and sent to frontend
-   - All request/response payloads must be encrypted
-
-2. **Authentication & Authorization**:
-   - JWT-based authentication
-   - Secure token storage and validation
-   - Rate limiting on all endpoints
-   - CORS properly configured
-
-3. **Security Headers**:
-   - Implement Helmet.js for security headers
-   - Proper CSP configuration
-   - XSS and CSRF protection
+- **API Type**: RESTful API with Monolithic architecture.
 
 ### Architecture Patterns
 1. **Repository Pattern**: 
@@ -95,6 +76,7 @@ src/
 
 1. **Error Handling**:
    - Centralized error handling middleware
+   - async handler in Controller layer
    - Try-catch in service layer throwing to controllers
    - Uncaught exception handling
    - Standardized error response format:
@@ -144,28 +126,17 @@ src/
    - Sequelize CLI for migrations
    - Environment-based database switching
 
-6. **Performance**:
-   - In-memory caching implementation
-   - Kafka integration for message queuing
-   - Compression for file uploads
-   - Request ID tracking for distributed tracing
-
-7. **API Documentation**:
-   - OpenAPI/Swagger integration
-   - Auto-generated from routes
-   - Includes request/response schemas
-
-8. **WebSocket Support**:
+6. **WebSocket Support**:
    - JWT authentication for WebSocket connections
    - AES+RSA encryption for WebSocket messages
    - Proper connection handling
 
-9. **File Handling**:
+7. **File Handling**:
    - Encrypted file uploads
    - Configurable storage location
    - Proper file validation
 
-10. **Health Checks**:
+8. **Health Checks**:
     - Health check endpoints
     - Database connectivity check
     - Graceful shutdown handling
@@ -182,32 +153,19 @@ src/
 
 ### Development Tools
 1. **TypeScript Configuration**:
-   - Strict mode enabled
-   - Latest stable TypeScript version
-   - Proper type definitions
+   - **Target**: `ES2020` or newer.
+   - **Strict Mode**: `true` and all `--strict` family options enabled (`strictNullChecks`, `strictFunctionTypes`, etc.).
+   - Latest stable TypeScript version.
+   - Proper type definitions for all modules.
 
 2. **Build Tool**: 
    - TypeScript compiler (tsc)
    - Proper build configuration
 
-3. **Process Management**:
-   - PM2 configuration
-   - Cluster mode support
-
-4. **Docker**:
-   - Optimized Dockerfile
-   - Small image size
-   - Security best practices
-
-5. **Code Quality**:
-   - ESLint with TypeScript rules
-   - Prettier configuration
-   - Industry-standard formatting
-
-6. **Testing**:
-   - Jest configuration
-   - Unit test examples
-   - Mocking strategies
+3. **Code Quality**:
+   - **SonarQube**: Mandatory static analysis to ensure code quality, security, and maintainability. All code must pass SonarQube checks.
+   - **ESLint**: Configured with strict TypeScript rules.
+   - **Prettier**: Enforced for consistent, industry-standard formatting.
 
 ### Best Practices to Follow
 1. **Security First**: Every decision should prioritize security
@@ -217,42 +175,40 @@ src/
 5. **Developer Experience**: Easy to understand and modify
 6. **Error Prevention**: Validate early, fail fast
 7. **Monitoring Ready**: Proper logging and metrics exposure
+8. **Include security considerations for each component**
 
-### Additional Requirements
-- Latest stable versions of all packages
-- Minimal dependencies (avoid bloatware)
-- Comprehensive error messages for debugging
-- Environment-agnostic code
-- Proper TypeScript types throughout
-- No any types unless absolutely necessary
-- Implement all SOLID principles
-- Follow DRY (Don't Repeat Yourself)
-- Use async/await pattern consistently
-- Proper database query optimization
+## Modern Practices & SonarQube Compliance
 
-## Output Expectations
-When generating code:
-1. Provide complete, working implementations
-2. Include all necessary imports
-3. Add comprehensive comments explaining complex logic
-4. Include error handling in every function
-5. Provide example usage where applicable
-6. Suggest best practices and alternatives when relevant
-7. Include security considerations for each component
+To ensure code is modern, maintainable, and passes static analysis checks:
 
-## Important Notes
-- Always encrypt response even if request decryption fails (return encrypted error)
-- File uploads must be encrypted before storage
-- All dates should be in UTC
-- Use environment variables for all configurations
-- Never expose sensitive information in logs
-- Implement request timeout handling
-- Add API versioning support (v1, v2)
-- Include CORS preflight handling
-- Implement proper HTTP status codes
+1.  **Null Safety and Type Guards**:
+    *   Use optional chaining (`?.`) for safe property access on potentially null or undefined objects.
+    *   Use the nullish coalescing operator (`??`) to provide default values for `null` or `undefined`.
+    *   Implement custom type guards to narrow types within conditional blocks.
 
+2.  **Asynchronous Code (ES2020+)**:
+    *   Always prefer `async/await` for readability.
+    *   Use `Promise.allSettled()` when you need to wait for multiple promises to complete, regardless of their success or failure.
+    *   Ensure every promise has a `.catch()` handler or is handled within a `try/catch` block to prevent unhandled promise rejections.
 
-###Guardrails 
+3.  **Error Handling**:
+    *   Create and throw specific, custom error classes that extend `Error` instead of generic `Error` objects.
+    *   Avoid catching generic `Error` or `any` in `catch` blocks. Catch specific custom errors first.
+    *   Never swallow exceptions in `catch` blocks; either handle them or re-throw them.
+
+4.  **Security (SonarQube Hotspots)**:
+    *   **ReDoS Prevention**: Avoid writing complex or inefficient regular expressions that are vulnerable to Regular Expression Denial of Service attacks. Use static analysis tools to check regex patterns.
+    *   **Secure Cookies**: When setting cookies, always use the `Secure`, `HttpOnly`, and `SameSite=Strict` (or `Lax`) attributes.
+    *   **Input Sanitization**: Sanitize all inputs rigorously, even if they are not directly used in database queries, to prevent XSS.
+
+5.  **Clean Code & Resource Management**:
+    *   **Low Cognitive Complexity**: Keep functions short and focused on a single task. Avoid deep nesting of loops and conditionals.
+    *   **No Magic Strings/Numbers**: Use named constants or enums instead of hardcoded literal values.
+    *   **Resource Management**: Ensure resources like database connections or file streams are always closed in a `finally` block or using a structured mechanism to prevent leaks.
+    *   **Remove Dead Code**: Actively remove unused variables, functions, imports, and classes.
+
+###Guardrails
+- **Static Analysis First**: All code must pass SonarQube and ESLint checks without errors before it can be considered complete or merged.
 Remember: This is an enterprise application where security, performance, and maintainability are paramount. Every line of code should reflect production-ready quality.
 
 Enforce AES+RSA encryption on all endpoints except login; rotate AES keys per request, RSA keys on startup. Always return encrypted error responses.
@@ -298,6 +254,52 @@ Capture unhandled exceptions and rejections globally; log and monitor key busine
 Use strict TypeScript without implicit any. Automate linting, formatting, builds, and tests in CI/CD.
 
 Keep dependencies minimal, updated, and audited regularly.
+
+## Prompting Framework for New Features
+
+When you request a new feature or route, I will ask for the following details to ensure a complete implementation. Please provide as much information as possible.
+
+### 1. Feature Overview
+- **Feature**: Brief description of what needs to be built.
+  - *Example: "Update user's first name and last name"*
+
+### 2. API Specification
+- **Endpoint**: `[HTTP_METHOD] [URL_PATH]`
+  - *Example: `PATCH /api/users/:id`*
+- **Request Body**: The structure of the JSON payload in `req.body`.
+- **URL Parameters**: Any parameters in the URL path (e.g., `:id`).
+- **Query Parameters**: Any parameters in the URL query string.
+
+### 3. Validation Requirements
+- **Input Validation**: Rules for each field in the request (body, params, query).
+  - *Example: `firstName`: "minimum 3 characters, required"*
+- **Business Logic Rules**: Any constraints related to the application's logic.
+  - *Example: "A user cannot be demoted from an 'admin' role."*
+
+### 4. Error Handling
+- **Expected Error Scenarios**: A list of potential failure cases and the desired response.
+  - *Example: User not found -> `404 Not Found`*
+  - *Example: Invalid input -> `400 Bad Request`*
+
+### 5. Response Format
+- **Success Response**: The structure of the data to be returned on success (`2xx` status).
+- **Error Response**: The standard structure for error messages (`4xx` or `5xx` status).
+
+### 6. Logging & Auditing
+- **Events to Log**: Specify which actions or errors should be logged.
+  - *Example: "Log successful name updates with old and new values."*
+  - *Example: "Create an audit trail for any changes to user permissions."*
+
+### 7. Security & Authorization
+- **Authentication**: Is a logged-in user required?
+- **Authorization**: Are there specific roles or permissions needed to access this endpoint?
+  - *Example: "Only users with the 'admin' role can access this."*
+
+### 8. Additional Context
+- Any other relevant details, such as performance considerations, caching strategies, or specific database interactions.
+
+
+
 
 
 

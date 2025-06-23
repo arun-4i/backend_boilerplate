@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config/env";
 import { userService } from "../services/userService";
-import { createUserSchema } from "../validators/userValidator";
+import {
+  createUserSchema,
+  updateUserSchema,
+} from "../validators/userValidator";
 import { logger } from "@utils/logger";
 import { asyncHandler } from "@utils/error";
 
@@ -121,6 +124,75 @@ export class UserController {
     async (req: Request, res: Response, next: NextFunction) => {
       const users = await userService.getAllUsers();
       res.json({ success: true, data: users });
+    }
+  );
+
+  public updateUser = asyncHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid user ID",
+          error: {
+            code: "INVALID_USER_ID",
+          },
+        });
+        return;
+      }
+
+      const parsed = updateUserSchema.safeParse(req.body);
+      if (!parsed.success) {
+        logger.warn("userAction", "Validation failed for user update", {
+          userId,
+          errors: parsed.error.errors,
+        });
+        res.status(400).json({
+          success: false,
+          message: "Validation error",
+          error: {
+            code: "VALIDATION_ERROR",
+            details: parsed.error.errors,
+          },
+        });
+        return;
+      }
+
+      try {
+        const updatedUser = await userService.updateUser(userId, parsed.data);
+
+        logger.info("userAction", "User updated successfully", {
+          userId,
+        });
+
+        res.json({
+          success: true,
+          data: {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            isActive: updatedUser.isActive,
+            updatedAt: updatedUser.updatedAt,
+          },
+        });
+      } catch (error: any) {
+        if (error.code === "USER_NOT_FOUND") {
+          logger.warn("userAction", "Attempt to update non-existent user", {
+            userId,
+          });
+          res.status(404).json({
+            success: false,
+            message: "User not found",
+            error: {
+              code: "USER_NOT_FOUND",
+            },
+          });
+          return;
+        }
+        logger.error("userAction", "Error updating user", { userId, error });
+        return next(error);
+      }
     }
   );
 }

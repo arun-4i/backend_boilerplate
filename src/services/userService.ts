@@ -1,5 +1,5 @@
 import { UserRepository } from "../repositories/userRepo";
-import { CreateUserInput } from "../validators/userValidator";
+import { CreateUserInput, UpdateUserInput } from "../validators/userValidator";
 import { User } from "../models/user";
 
 const userRepository = new UserRepository();
@@ -24,6 +24,19 @@ export class UserService {
 
   async getAllUsers(): Promise<User[]> {
     return userRepository.getAllUsers();
+  }
+
+  async updateUser(userId: number, updateData: UpdateUserInput): Promise<User> {
+    try {
+      return await userRepository.updateUser(userId, updateData);
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        const err = new Error("User not found");
+        (err as any).code = "USER_NOT_FOUND";
+        throw err;
+      }
+      throw error;
+    }
   }
 }
 
