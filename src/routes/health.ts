@@ -3,10 +3,10 @@ import { unprotectedRoute } from "@middleware/autoEncryption";
 import { config } from "@config/env";
 import { logger } from "@utils/logger";
 
-const router = Router();
+const HealthRouter = Router();
 
 // Health check route
-router.get("/", unprotectedRoute, (req, res) => {
+HealthRouter.get("/", unprotectedRoute, (req, res) => {
   const healthStatus = {
     success: true,
     status: "healthy",
@@ -29,7 +29,7 @@ router.get("/", unprotectedRoute, (req, res) => {
 });
 
 // Detailed health check with crypto service status
-router.get("/detailed", unprotectedRoute, async (req, res) => {
+HealthRouter.get("/detailed", unprotectedRoute, async (req, res) => {
   try {
     const { jwtCryptoService } = await import("../utils/crypto");
     const cryptoHealth = jwtCryptoService.getHealthStatus();
@@ -79,4 +79,4 @@ router.get("/detailed", unprotectedRoute, async (req, res) => {
   }
 });
 
-export default router;
+export default HealthRouter;

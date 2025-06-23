@@ -1,4 +1,5 @@
 export const END_POINTS = {
-  USER: "/user",
+  USER: "/users",
   HEALTH: "/health",
+  USER_PROFILE: "/userProfiles",
 } as const;

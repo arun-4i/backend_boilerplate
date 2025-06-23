@@ -22,6 +22,7 @@ export const config = {
     process.env.RATE_LIMIT_MAX_REQUESTS || "100"
   ),
   MASTER_ENCRYPTION_KEY: process.env.MASTER_ENCRYPTION_KEY || "",
+  ENCRYPTION_ENABLED: process.env.ENCRYPTION_ENABLED !== "false",
 
   // Logger
   LOG_LEVEL: process.env.LOG_LEVEL || "info",

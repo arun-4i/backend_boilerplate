@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { jwtCryptoService } from "@utils/crypto";
 import { logger } from "@utils/logger";
 import { END_POINTS } from "@routes/end-points";
+import { config } from "@config/env";
 
 // ========================================
 // TYPES & INTERFACES
@@ -136,6 +137,15 @@ function decryptRequestIfNeeded(
     });
     return true;
   }
+
+  if (!config.ENCRYPTION_ENABLED) {
+    logger.debug("api", "Encryption is disabled. Skipping decryption.", {
+      requestId: req.requestId,
+      userId,
+    });
+    return true;
+  }
+
   if (req.body && hasEncryptedPayload(req.body)) {
     const { data, iv, authTag, timestamp } = req.body;
     if (!isValidTimestamp(timestamp)) {
@@ -224,6 +234,15 @@ function overrideResponseJson(
         });
         return originalJson(cleanObj);
       }
+
+      if (!config.ENCRYPTION_ENABLED) {
+        logger.debug("api", "Encryption is disabled. Skipping encryption.", {
+          requestId: req.requestId,
+          userId,
+        });
+        return originalJson(obj);
+      }
+
       const jsonString = JSON.stringify(obj);
       const encrypted = jwtCryptoService.encrypt(jsonString, jwtToken);
       const encryptedPayload: EncryptedPayload = {
