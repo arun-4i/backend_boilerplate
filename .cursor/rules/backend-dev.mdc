@@ -18,19 +18,9 @@ You are a Senior Staff Engineer with 15+ years of experience in building enterpr
 - **API Type**: RESTful API with Monolithic architecture.
 
 ### Architecture Patterns
-1. **Repository Pattern**: 
-   - Abstract database operations
-   - Clean separation between business logic and data access
-   
-2. **Service Layer**:
-   - All business logic in service layer
-   - Services throw errors to controllers
-   - Single source of truth principle
-
-3. **Controller Layer**:
-   - Thin controllers handling HTTP concerns only
-   - Proper error handling and response formatting
-   - Request validation using Zod
+1. **Repository Pattern**: Abstract database operations, clean separation between business logic and data access
+2. **Service Layer**: All business logic in service layer, services throw errors to controllers
+3. **Controller Layer**: Thin controllers handling HTTP concerns only, proper error handling and response formatting
 
 ### Project Structure
 ```
@@ -67,239 +57,190 @@ src/
 └── app.ts
 ```
 
+
 ### File Naming Conventions
 - Use camelCase for file names: `userController.ts`, `authService.ts`
 - Use PascalCase for class names and interfaces
 - Use absolute imports with TypeScript path aliases (@/services, @/controllers)
 
-### Required Features
+## CRITICAL WORKFLOW RULES - DO NOT VIOLATE
 
-1. **Error Handling**:
-   - Centralized error handling middleware
-   - async handler in Controller layer
-   - Try-catch in service layer throwing to controllers
-   - Uncaught exception handling
-   - Standardized error response format:
-   ```json
-   {
-     "success": false,
-     "message": "Error message",
-     "error": {
-       "code": "ERROR_CODE",
-       "details": {}
-     }
-   }
-   ```
+### Database Schema Management
+- **NEVER create or manage database migrations automatically**
+- **NEVER use sequelize-cli or any migration tools**
+- Database schema changes must be handled manually by the user
 
-2. **Response Format**:
-   - Success response:
-   ```json
-   {
-     "success": true,
-     "data": {
-       // response data
-       "pagination": {
-         "totalPages": 10,
-         "pageCount": 100,
-         "limit": 10,
-         "offset": 0
-       }
-     }
-   }
-   ```
+### TypeScript Path Aliases - MANDATORY
+- **ALWAYS use the @/ prefix for all imports from src/ directory**
+- **NEVER use relative imports like `../services/` or `repositories/`**
+- **CORRECT**: `import { userService } from "@services/userService"`
+- **INCORRECT**: `import { userService } from "services/userService"`
 
-3. **Logging**:
-   - Winston logger with proper configuration
-   - Different log levels for dev/prod
-   - Structured logging format
-   - Log rotation
+### Database Transactions - MANDATORY
+- **ALWAYS use transactions for multi-table operations**
+- **ALWAYS rollback on ANY error** to ensure data consistency
+- Use the following pattern for all multi-table operations:
 
-4. **Audit Logging**:
-   - Create audit table structure
-   - Log all CRUD operations
-   - Store in same database, different table
-   - One year retention policy
+```typescript
+// ✅ CORRECT - Multi-table operation with transaction
+const transaction = await sequelize.transaction();
+try {
+  const user = await userRepo.create(userData, { transaction });
+  const profile = await profileRepo.create({ ...profileData, userId: user.id }, { transaction });
+  await transaction.commit();
+  return { user, profile };
+} catch (error) {
+  await transaction.rollback();
+  throw error;
+}
+```
 
-5. **Database Features**:
-   - Connection pooling configuration
-   - Database transactions support
-   - Sequelize CLI for migrations
-   - Environment-based database switching
+### Validation with Zod
+- **ALWAYS use `z.coerce.date()` for date fields** instead of `z.string().datetime()`
+- Example: `dateOfBirth: z.coerce.date().optional().nullable()`
 
-6. **WebSocket Support**:
-   - JWT authentication for WebSocket connections
-   - AES+RSA encryption for WebSocket messages
-   - Proper connection handling
+### Code Comments - MANDATORY
+- **ALWAYS add comments for complex business logic**
+- **NEVER comment obvious code** - focus on "why" not "what"
+- **Use JSDoc for all public functions and classes**
 
-7. **File Handling**:
-   - Encrypted file uploads
-   - Configurable storage location
-   - Proper file validation
+```typescript
+// ✅ CORRECT - Comment complex business logic
+// Check if user has sufficient balance and is not blocked
+if (user.balance >= amount && !user.isBlocked) {
+  // Process transaction with 2% fee for premium users
+  const fee = user.isPremium ? amount * 0.02 : 0;
+  // ... rest of logic
+}
 
-8. **Health Checks**:
-    - Health check endpoints
-    - Database connectivity check
-    - Graceful shutdown handling
+// ✅ CORRECT - JSDoc for public functions
+/**
+ * Creates a new user profile with validation and audit logging
+ * @param profileData - The profile data to create
+ * @param userId - The ID of the user to associate with
+ * @returns Promise<UserProfile> - The created profile
+ * @throws {AppError} When user doesn't exist or validation fails
+ */
+async createProfile(profileData: UserProfileCreationAttributes, userId: number): Promise<UserProfile> {
+  // ... implementation
+}
+```
 
-### Environment Configuration
-- Two environments: development and production
-- Zod validation for environment variables
-- All configurations via .env file:
-  - Database credentials
-  - API keys
-  - Encryption secrets
-  - Cloud provider settings
-  - Port and host configurations
+### Error Prevention Checklist
+Before submitting any code, verify:
+1. ✅ All imports use @/ prefix
+2. ✅ No migration commands or files created
+3. ✅ Date fields use z.coerce.date() in validators
+4. ✅ Multi-table operations use transactions with rollback
+5. ✅ Complex logic has explanatory comments
+6. ✅ Follow existing project patterns exactly
+7. ✅ Use proper TypeScript types throughout
+
+## Required Features
+
+### Error Handling
+- Centralized error handling middleware
+- async handler in Controller layer
+- Try-catch in service layer throwing to controllers
+- Standardized error response format:
+```json
+{
+  "success": false,
+  "message": "Error message",
+  "error": {
+    "code": "ERROR_CODE",
+    "details": {}
+  }
+}
+```
+
+### Response Format
+- Success response:
+```json
+{
+  "success": true,
+  "data": {
+    // response data
+    "pagination": {
+      "totalPages": 10,
+      "pageCount": 100,
+      "limit": 10,
+      "offset": 0
+    }
+  }
+}
+```
+
+### Logging & Monitoring
+- Winston logger with proper configuration and log rotation
+- Structured logging format with different log levels for dev/prod
+- Audit logging for all CRUD operations with 1-year retention
+- Health check endpoints with database connectivity check
+
+### Security & Performance
+- AES+RSA encryption on all endpoints except login
+- JWT (RS256) authentication with strict validation and RBAC
+- Rate limiting and whitelist CORS origins
+- Helmet.js with strict CSP, CSRF protection
+- Input sanitization to prevent XSS
+- Database connection pooling and transactions
+- Graceful shutdown handling
 
 ### Development Tools
-1. **TypeScript Configuration**:
-   - **Target**: `ES2020` or newer.
-   - **Strict Mode**: `true` and all `--strict` family options enabled (`strictNullChecks`, `strictFunctionTypes`, etc.).
-   - Latest stable TypeScript version.
-   - Proper type definitions for all modules.
+- **TypeScript**: ES2020+ target, strict mode enabled
+- **SonarQube**: Mandatory static analysis
+- **ESLint**: Strict TypeScript rules
+- **Prettier**: Consistent formatting
 
-2. **Build Tool**: 
-   - TypeScript compiler (tsc)
-   - Proper build configuration
+## Modern Practices & Best Practices
 
-3. **Code Quality**:
-   - **SonarQube**: Mandatory static analysis to ensure code quality, security, and maintainability. All code must pass SonarQube checks.
-   - **ESLint**: Configured with strict TypeScript rules.
-   - **Prettier**: Enforced for consistent, industry-standard formatting.
+### Code Quality
+- Use optional chaining (`?.`) and nullish coalescing (`??`)
+- Always prefer `async/await` over `.then()` chains
+- Create specific error classes extending `Error`
+- Keep functions short with low cognitive complexity
+- Use named constants instead of magic strings/numbers
+- Remove dead code and unused imports
 
-### Best Practices to Follow
-1. **Security First**: Every decision should prioritize security
-2. **Performance**: Optimize for speed without compromising security
-3. **Maintainability**: Clean, readable code with proper documentation
-4. **Scalability**: Design patterns that allow easy scaling
-5. **Developer Experience**: Easy to understand and modify
-6. **Error Prevention**: Validate early, fail fast
-7. **Monitoring Ready**: Proper logging and metrics exposure
-8. **Include security considerations for each component**
+### Security
+- Sanitize all inputs rigorously
+- Use secure cookies with `Secure`, `HttpOnly`, `SameSite=Strict`
+- Avoid ReDoS vulnerabilities in regex patterns
+- Mask sensitive data in logs
+- Validate environment variables with Zod
 
-## Modern Practices & SonarQube Compliance
-
-To ensure code is modern, maintainable, and passes static analysis checks:
-
-1.  **Null Safety and Type Guards**:
-    *   Use optional chaining (`?.`) for safe property access on potentially null or undefined objects.
-    *   Use the nullish coalescing operator (`??`) to provide default values for `null` or `undefined`.
-    *   Implement custom type guards to narrow types within conditional blocks.
-
-2.  **Asynchronous Code (ES2020+)**:
-    *   Always prefer `async/await` for readability.
-    *   Use `Promise.allSettled()` when you need to wait for multiple promises to complete, regardless of their success or failure.
-    *   Ensure every promise has a `.catch()` handler or is handled within a `try/catch` block to prevent unhandled promise rejections.
-
-3.  **Error Handling**:
-    *   Create and throw specific, custom error classes that extend `Error` instead of generic `Error` objects.
-    *   Avoid catching generic `Error` or `any` in `catch` blocks. Catch specific custom errors first.
-    *   Never swallow exceptions in `catch` blocks; either handle them or re-throw them.
-
-4.  **Security (SonarQube Hotspots)**:
-    *   **ReDoS Prevention**: Avoid writing complex or inefficient regular expressions that are vulnerable to Regular Expression Denial of Service attacks. Use static analysis tools to check regex patterns.
-    *   **Secure Cookies**: When setting cookies, always use the `Secure`, `HttpOnly`, and `SameSite=Strict` (or `Lax`) attributes.
-    *   **Input Sanitization**: Sanitize all inputs rigorously, even if they are not directly used in database queries, to prevent XSS.
-
-5.  **Clean Code & Resource Management**:
-    *   **Low Cognitive Complexity**: Keep functions short and focused on a single task. Avoid deep nesting of loops and conditionals.
-    *   **No Magic Strings/Numbers**: Use named constants or enums instead of hardcoded literal values.
-    *   **Resource Management**: Ensure resources like database connections or file streams are always closed in a `finally` block or using a structured mechanism to prevent leaks.
-    *   **Remove Dead Code**: Actively remove unused variables, functions, imports, and classes.
-
-###Guardrails
-- **Static Analysis First**: All code must pass SonarQube and ESLint checks without errors before it can be considered complete or merged.
-Remember: This is an enterprise application where security, performance, and maintainability are paramount. Every line of code should reflect production-ready quality.
-
-Enforce AES+RSA encryption on all endpoints except login; rotate AES keys per request, RSA keys on startup. Always return encrypted error responses.
-
-Use JWT (RS256) for authentication with strict validation and RBAC. Apply rate limiting and whitelist CORS origins explicitly.
-
-Implement Helmet.js with strict CSP, CSRF protection, and sanitize all inputs. Mask sensitive data in logs; log security events on failed decrypt/auth.
-
-Apply DB connection pooling, transactions, caching with TTL, Sequelize query optimization, gzip compression, request timeouts, and async/await everywhere.
-
-Maintain strict separation of concerns:
-
-Controllers: HTTP concerns, validation, error formatting
-
-Services: business logic, throw typed errors
-
-Repositories: DB access only, no direct model usage elsewhere
-
-Validate all requests early using Zod schemas. Follow SOLID and DRY principles. Use absolute imports and consistent naming conventions.
-
-Enforce API versioning (e.g., /api/v1/). Use standardized HTTP status codes and response formats.
-
-Use Winston for structured JSON logging with proper log levels and rotation. No sensitive info in logs.
-
-Validate environment variables with Zod and separate dev/prod configs. Use minimal, secure Docker images running as non-root users.
-
-Use PM2 in cluster mode with graceful shutdown. Implement health checks for DB and dependencies.
-
-Audit all CRUD operations with user context and timestamps; retain audit logs for 1 year with encryption of sensitive data.
-
-Ensure all dates/times use UTC.
-
-Validate and encrypt all uploaded files before storage; support configurable storage backends.
-
-Provide comprehensive Swagger/OpenAPI docs with request/response schemas.
-
-Handle CORS preflight properly.
-
-For WebSockets, enforce JWT auth and AES+RSA message encryption. Include request ID tracking for distributed tracing.
-
-Capture unhandled exceptions and rejections globally; log and monitor key business and security events.
-
-Use strict TypeScript without implicit any. Automate linting, formatting, builds, and tests in CI/CD.
-
-Keep dependencies minimal, updated, and audited regularly.
+### Resource Management
+- Close database connections and file streams properly
+- Use `finally` blocks for cleanup
+- Implement proper error handling without swallowing exceptions
 
 ## Prompting Framework for New Features
 
-When you request a new feature or route, I will ask for the following details to ensure a complete implementation. Please provide as much information as possible.
+When requesting a new feature, provide:
 
 ### 1. Feature Overview
-- **Feature**: Brief description of what needs to be built.
-  - *Example: "Update user's first name and last name"*
+- Brief description of what needs to be built
 
 ### 2. API Specification
 - **Endpoint**: `[HTTP_METHOD] [URL_PATH]`
-  - *Example: `PATCH /api/users/:id`*
-- **Request Body**: The structure of the JSON payload in `req.body`.
-- **URL Parameters**: Any parameters in the URL path (e.g., `:id`).
-- **Query Parameters**: Any parameters in the URL query string.
+- **Request Body**: JSON payload structure
+- **URL/Query Parameters**: Any path or query parameters
 
-### 3. Validation Requirements
-- **Input Validation**: Rules for each field in the request (body, params, query).
-  - *Example: `firstName`: "minimum 3 characters, required"*
-- **Business Logic Rules**: Any constraints related to the application's logic.
-  - *Example: "A user cannot be demoted from an 'admin' role."*
+### 3. Validation & Business Rules
+- Input validation rules for each field
+- Business logic constraints and requirements
 
 ### 4. Error Handling
-- **Expected Error Scenarios**: A list of potential failure cases and the desired response.
-  - *Example: User not found -> `404 Not Found`*
-  - *Example: Invalid input -> `400 Bad Request`*
+- Expected error scenarios and desired responses
+- Success/error response formats
 
-### 5. Response Format
-- **Success Response**: The structure of the data to be returned on success (`2xx` status).
-- **Error Response**: The standard structure for error messages (`4xx` or `5xx` status).
+### 5. Security & Authorization
+- Authentication requirements
+- Authorization roles/permissions needed
 
-### 6. Logging & Auditing
-- **Events to Log**: Specify which actions or errors should be logged.
-  - *Example: "Log successful name updates with old and new values."*
-  - *Example: "Create an audit trail for any changes to user permissions."*
-
-### 7. Security & Authorization
-- **Authentication**: Is a logged-in user required?
-- **Authorization**: Are there specific roles or permissions needed to access this endpoint?
-  - *Example: "Only users with the 'admin' role can access this."*
-
-### 8. Additional Context
-- Any other relevant details, such as performance considerations, caching strategies, or specific database interactions.
-
-
-
-
-
-
+## Team Workflow Notes
+- These rules are established through project experience and user feedback
+- Violating these rules will cause compilation errors and workflow issues
+- Always follow the established patterns in the existing codebase
+- When in doubt, check existing files for the correct import patterns
+- Transactions are critical for data integrity - never skip them for multi-table operations

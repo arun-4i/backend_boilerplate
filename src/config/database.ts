@@ -30,11 +30,11 @@ export class DatabaseConnection {
         return new Sequelize(DB_CONNECTION_STRING, {
           ...sequelizeConfig,
           dialect: "mysql",
-          dialectOptions: {
-            charset: "utf8mb4",
-            collate: "utf8mb4_unicode_ci",
-            timezone: "+00:00",
-          },
+          // dialectOptions: {
+          //   charset: "utf8mb4",
+          //   collate: "utf8mb4_unicode_ci",
+          //   timezone: "+00:00",
+          // },
         });
 
       case "mssql":
