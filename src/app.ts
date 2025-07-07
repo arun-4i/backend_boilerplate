@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
@@ -14,6 +14,10 @@ import {
   jsonBodyParserOptions,
   urlencodedBodyParserOptions,
 } from "@config/express/bodyParserConfig";
+import swaggerUi from "swagger-ui-express";
+import { openApiBaseConfig } from "@config/swagger";
+import { registry } from "@utils/swaggerRegistry";
+import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 
 import router from "@routes/index";
 import { errorHandler, notFoundHandler } from "@utils/error";
@@ -67,6 +71,53 @@ export const createApp = (): Application => {
 
   app.use(autoProtect);
 
+  // --- Swagger/OpenAPI Integration ---
+  const enableDocs =
+    config.ENABLE_SWAGGER_DOCS !== undefined
+      ? config.ENABLE_SWAGGER_DOCS === "true"
+      : config.NODE_ENV !== "production";
+
+  if (enableDocs) {
+    const generator = new OpenApiGeneratorV3(registry.definitions);
+    const openApiDoc = generator.generateDocument(openApiBaseConfig);
+
+    // Serve OpenAPI JSON
+    app.get("/api/docs/openapi.json", (req: Request, res: Response) => {
+      logger.info("api", "Swagger OpenAPI JSON accessed", {
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+        timestamp: new Date().toISOString(),
+      });
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.json(openApiDoc);
+    });
+
+    // Serve Swagger UI
+    app.use(
+      "/api/docs",
+      (req: Request, res: Response, next: NextFunction) => {
+        logger.info("api", "Swagger UI accessed", {
+          ip: req.ip,
+          userAgent: req.headers["user-agent"],
+          timestamp: new Date().toISOString(),
+        });
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        next();
+      },
+      swaggerUi.serve,
+      swaggerUi.setup(openApiDoc)
+    );
+    logger.info("system", "Swagger UI and OpenAPI JSON endpoints enabled", {
+      docsUrl: "/api/docs",
+      openapiJson: "/api/docs/openapi.json",
+    });
+  } else {
+    logger.info(
+      "system",
+      "Swagger UI and OpenAPI JSON endpoints disabled in production"
+    );
+  }
+
   const baseUrl = config.BASE_URL;
   app.use(baseUrl, router);
 
@@ -76,7 +127,7 @@ export const createApp = (): Application => {
   });
 
   // 404 HANDLER
-  app.use(notFoundHandler)
+  app.use(notFoundHandler);
   // GLOBAL ERROR HANDLER
   app.use(errorHandler);
   // APPLICATION READY

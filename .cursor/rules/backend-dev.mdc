@@ -1,246 +1,40 @@
----
-description: This document codifies the definitive development standard for this project's enterprise-grade Node.js backend. It serves as the authoritative blueprint that the AI must automatically fetch and apply to every development task. By defining everything from high-level architecture (Controller-Service-Repository) to granular code-level and security requirements (SonarQube compliance, ES2020, end-to-end encryption), this rulebook ensures all generated code is consistent, secure, and production-ready without needing repeated clarification. It covers the complete technology stack (Express, TypeScript, Sequelize), mandates specific project structure, error handling patterns, logging standards, and even includes a framework for how new feature requests should be specified. It is the single source of truth for all backend development.
-globs: 
-alwaysApply: false
----
-# Enterprise Backend Development Prompt
+# Backend Development Overview
 
-## Role & Context
-You are a Senior Staff Engineer with 15+ years of experience in building enterprise-grade, secure, and scalable backend systems. You specialize in Node.js, Express, TypeScript, and have deep expertise in security, performance optimization, and clean architecture principles.
+This file provides a high-level overview of backend development for this project. For detailed standards, see the modular rule files referenced in .cursorrules.
 
-## Project Requirements
+## Purpose
 
-### Core Technology Stack
-- **Framework**: Express.js with TypeScript (latest stable versions)
-- **ORM**: Sequelize with TypeScript support
-- **Database**: Support for Oracle, MySQL, and MSSQL (configurable via environment)
-- **Architecture**: Monolithic with clean separation of concerns
-- **API Type**: RESTful API with Monolithic architecture.
+- Guide ongoing backend development and refactoring
+- Reference for best practices and architecture
+- All technical details and standards are now in modular rule files
 
-### Architecture Patterns
-1. **Repository Pattern**: Abstract database operations, clean separation between business logic and data access
-2. **Service Layer**: All business logic in service layer, services throw errors to controllers
-3. **Controller Layer**: Thin controllers handling HTTP concerns only, proper error handling and response formatting
+## Key Principles
 
-### Project Structure
-```
-src/
-├── config/
-│   ├── database.ts
-│   ├── encryption.ts
-│   ├── environment.ts
-│   └── swagger.ts
-├── controllers/
-│   └── [resource].controller.ts
-├── services/
-│   └── [resource].service.ts
-├── repositories/
-│   └── [resource].repository.ts
-├── models/
-│   └── [resource].model.ts
-├── middlewares/
-│   ├── auth.middleware.ts
-│   ├── encryption.middleware.ts
-│   ├── error.middleware.ts
-│   ├── validation.middleware.ts
-│   └── rateLimiter.middleware.ts
-├── utils/
-│   ├── encryption.util.ts
-│   ├── logger.util.ts
-│   └── response.util.ts
-├── types/
-│   └── index.ts
-├── validators/
-│   └── [resource].validator.ts
-├── migrations/
-├── seeders/
-└── app.ts
-```
+- Security, performance, and maintainability are top priorities
+- Follow clean architecture: separation of concerns between controllers, services, repositories
+- Use TypeScript, Express, and Sequelize as core stack
+- All new features and refactors must start with a detailed, tickable plan (see [rules/workflow.mdc])
+- Retrospective & feedback required after implementation (see [rules/workflow.mdc])
 
+## Modular Rules
 
-### File Naming Conventions
-- Use camelCase for file names: `userController.ts`, `authService.ts`
-- Use PascalCase for class names and interfaces
-- Use absolute imports with TypeScript path aliases (@/services, @/controllers)
+For all technical standards, see:
 
-## CRITICAL WORKFLOW RULES - DO NOT VIOLATE
+- [rules/architecture/patterns.mdc]
+- [rules/architecture/structure.mdc]
+- [rules/architecture/dependencies.mdc]
+- [rules/security/encryption.mdc]
+- [rules/security/authentication.mdc]
+- [rules/security/validation.mdc]
+- [rules/development/error-handling.mdc]
+- [rules/development/logging.mdc]
+- [rules/development/swagger.mdc]
+- [rules/development/testing.mdc]
+- [rules/database/models.mdc]
+- [rules/database/migrations.mdc]
+- [rules/database/transactions.mdc]
+- [rules/deployment/environment.mdc]
+- [rules/deployment/performance.mdc]
+- [rules/deployment/monitoring.mdc]
 
-### Database Schema Management
-- **NEVER create or manage database migrations automatically**
-- **NEVER use sequelize-cli or any migration tools**
-- Database schema changes must be handled manually by the user
-
-### TypeScript Path Aliases - MANDATORY
-- **ALWAYS use the @/ prefix for all imports from src/ directory**
-- **NEVER use relative imports like `../services/` or `repositories/`**
-- **CORRECT**: `import { userService } from "@services/userService"`
-- **INCORRECT**: `import { userService } from "services/userService"`
-
-### Database Transactions - MANDATORY
-- **ALWAYS use transactions for multi-table operations**
-- **ALWAYS rollback on ANY error** to ensure data consistency
-- Use the following pattern for all multi-table operations:
-
-```typescript
-// ✅ CORRECT - Multi-table operation with transaction
-const transaction = await sequelize.transaction();
-try {
-  const user = await userRepo.create(userData, { transaction });
-  const profile = await profileRepo.create({ ...profileData, userId: user.id }, { transaction });
-  await transaction.commit();
-  return { user, profile };
-} catch (error) {
-  await transaction.rollback();
-  throw error;
-}
-```
-
-### Validation with Zod
-- **ALWAYS use `z.coerce.date()` for date fields** instead of `z.string().datetime()`
-- Example: `dateOfBirth: z.coerce.date().optional().nullable()`
-
-### Code Comments - MANDATORY
-- **ALWAYS add comments for complex business logic**
-- **NEVER comment obvious code** - focus on "why" not "what"
-- **Use JSDoc for all public functions and classes**
-
-```typescript
-// ✅ CORRECT - Comment complex business logic
-// Check if user has sufficient balance and is not blocked
-if (user.balance >= amount && !user.isBlocked) {
-  // Process transaction with 2% fee for premium users
-  const fee = user.isPremium ? amount * 0.02 : 0;
-  // ... rest of logic
-}
-
-// ✅ CORRECT - JSDoc for public functions
-/**
- * Creates a new user profile with validation and audit logging
- * @param profileData - The profile data to create
- * @param userId - The ID of the user to associate with
- * @returns Promise<UserProfile> - The created profile
- * @throws {AppError} When user doesn't exist or validation fails
- */
-async createProfile(profileData: UserProfileCreationAttributes, userId: number): Promise<UserProfile> {
-  // ... implementation
-}
-```
-
-### Error Prevention Checklist
-Before submitting any code, verify:
-1. ✅ All imports use @/ prefix
-2. ✅ No migration commands or files created
-3. ✅ Date fields use z.coerce.date() in validators
-4. ✅ Multi-table operations use transactions with rollback
-5. ✅ Complex logic has explanatory comments
-6. ✅ Follow existing project patterns exactly
-7. ✅ Use proper TypeScript types throughout
-
-## Required Features
-
-### Error Handling
-- Centralized error handling middleware
-- async handler in Controller layer
-- Try-catch in service layer throwing to controllers
-- Standardized error response format:
-```json
-{
-  "success": false,
-  "message": "Error message",
-  "error": {
-    "code": "ERROR_CODE",
-    "details": {}
-  }
-}
-```
-
-### Response Format
-- Success response:
-```json
-{
-  "success": true,
-  "data": {
-    // response data
-    "pagination": {
-      "totalPages": 10,
-      "pageCount": 100,
-      "limit": 10,
-      "offset": 0
-    }
-  }
-}
-```
-
-### Logging & Monitoring
-- Winston logger with proper configuration and log rotation
-- Structured logging format with different log levels for dev/prod
-- Audit logging for all CRUD operations with 1-year retention
-- Health check endpoints with database connectivity check
-
-### Security & Performance
-- AES+RSA encryption on all endpoints except login
-- JWT (RS256) authentication with strict validation and RBAC
-- Rate limiting and whitelist CORS origins
-- Helmet.js with strict CSP, CSRF protection
-- Input sanitization to prevent XSS
-- Database connection pooling and transactions
-- Graceful shutdown handling
-
-### Development Tools
-- **TypeScript**: ES2020+ target, strict mode enabled
-- **SonarQube**: Mandatory static analysis
-- **ESLint**: Strict TypeScript rules
-- **Prettier**: Consistent formatting
-
-## Modern Practices & Best Practices
-
-### Code Quality
-- Use optional chaining (`?.`) and nullish coalescing (`??`)
-- Always prefer `async/await` over `.then()` chains
-- Create specific error classes extending `Error`
-- Keep functions short with low cognitive complexity
-- Use named constants instead of magic strings/numbers
-- Remove dead code and unused imports
-
-### Security
-- Sanitize all inputs rigorously
-- Use secure cookies with `Secure`, `HttpOnly`, `SameSite=Strict`
-- Avoid ReDoS vulnerabilities in regex patterns
-- Mask sensitive data in logs
-- Validate environment variables with Zod
-
-### Resource Management
-- Close database connections and file streams properly
-- Use `finally` blocks for cleanup
-- Implement proper error handling without swallowing exceptions
-
-## Prompting Framework for New Features
-
-When requesting a new feature, provide:
-
-### 1. Feature Overview
-- Brief description of what needs to be built
-
-### 2. API Specification
-- **Endpoint**: `[HTTP_METHOD] [URL_PATH]`
-- **Request Body**: JSON payload structure
-- **URL/Query Parameters**: Any path or query parameters
-
-### 3. Validation & Business Rules
-- Input validation rules for each field
-- Business logic constraints and requirements
-
-### 4. Error Handling
-- Expected error scenarios and desired responses
-- Success/error response formats
-
-### 5. Security & Authorization
-- Authentication requirements
-- Authorization roles/permissions needed
-
-## Team Workflow Notes
-- These rules are established through project experience and user feedback
-- Violating these rules will cause compilation errors and workflow issues
-- Always follow the established patterns in the existing codebase
-- When in doubt, check existing files for the correct import patterns
-- Transactions are critical for data integrity - never skip them for multi-table operations
+Update or add new rule files as the codebase evolves.

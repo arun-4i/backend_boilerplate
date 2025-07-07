@@ -5,6 +5,10 @@ alwaysApply: false
 ---
 # Enterprise Backend Development Prompt
 
+# NOTE: This file is for initializing a new backend project from scratch. For ongoing backend development and enhancements, refer to backend-dev.mdc.
+# This file serves as the foundational blueprint. Update only when making fundamental changes to the backend architecture or standards.
+# For workflow, planning, and feedback/retrospective process, see .cursorrules.
+
 ## Role & Context
 You are a Senior Staff Engineer with 15+ years of experience in building enterprise-grade, secure, and scalable backend systems. You specialize in Node.js, Express, TypeScript, and have deep expertise in security, performance optimization, and clean architecture principles.
 

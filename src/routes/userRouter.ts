@@ -1,9 +1,9 @@
-import { userController } from "@controllers/userController";
 import { Router } from "express";
+import { userRoutes } from "@controllers/userController";
+import { autoRegisterRoutes } from "@utils/autoRegisterRoutes";
+import { registry } from "@utils/swaggerRegistry";
 
-export const userRouter = Router();
+const userRouter = Router();
+autoRegisterRoutes(userRouter, userRoutes as any, registry);
 
-userRouter.post("/register", userController.register);
-userRouter.post("/login", userController.login);
-userRouter.get("/", userController.getAllUsers);
-userRouter.patch("/:id", userController.updateUser);
+export { userRouter };

@@ -8,12 +8,12 @@ const startServer = async (): Promise<void> => {
     // Authenticate DB connection
     await sequelize.authenticate();
     const dbDialect = config.DB_CONNECTION_STRING.split(":")[0];
-    console.log(`${dbDialect} DataBase Connection Establish !!!!`);
+    console.info(`${dbDialect} DataBase Connection Establish !!!!`);
 
     // Sync database (only in development)
     if (config.NODE_ENV === "development") {
       await sequelize.sync({ logging: false });
-      console.log("DataBase Sync complete !!!\n");
+      console.info("DataBase Sync complete !!!\n");
     }
 
     // Create Express app
@@ -21,21 +21,21 @@ const startServer = async (): Promise<void> => {
 
     // Start HTTP server
     const server = app.listen(config.PORT, () => {
-      console.log(`🚀 Server running on port ${config.PORT}`);
-      console.log(`📊 Environment: ${config.NODE_ENV}`);
-      console.log(`🔗 Base URL: localhost:${config.PORT}${config.BASE_URL}`);
+      console.info(`🚀 Server running on port ${config.PORT}`);
+      console.info(`📊 Environment: ${config.NODE_ENV}`);
+      console.info(`🔗 Base URL: localhost:${config.PORT}${config.BASE_URL}`);
     });
 
     // Graceful shutdown
-    const gracefulShutdown = async (signal: string) => {
-      console.log(`\n🛑 ${signal} received, shutting down gracefully...`);
+    const gracefulShutdown = async (signal: string): Promise<void> => {
+      console.info(`\n🛑 ${signal} received, shutting down gracefully...`);
 
       server.close(async () => {
-        console.log("📡 HTTP server closed");
+        console.info("📡 HTTP server closed");
 
         try {
           await DatabaseConnection.closeConnection();
-          console.log("✅ Shutdown complete");
+          console.info("✅ Shutdown complete");
           process.exit(0);
         } catch (error) {
           console.error("❌ Error during shutdown:", error);

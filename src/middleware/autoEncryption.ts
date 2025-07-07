@@ -79,6 +79,26 @@ function authenticateJWT(
   req: AuthenticatedRequest,
   res: Response
 ): { payload: any; jwtToken: string } | null {
+  // Check if JWT verification is enabled via env
+  if (!config.JWT_VERIFICATION_ENABLED) {
+    logger.warn(
+      "auth",
+      "JWT verification is DISABLED via environment variable. Skipping JWT check.",
+      {
+        requestId: req.requestId,
+        path: req.path,
+        ip: req.ip,
+      }
+    );
+    // Set a default/anonymous user context
+    req.user = {
+      userId: "anonymous",
+      email: "anonymous@local",
+      role: "guest",
+    };
+    req.jwtToken = undefined;
+    return { payload: req.user, jwtToken: "" };
+  }
   const jwtToken = extractJWT(req);
   if (!jwtToken) {
     logger.warn("auth", "Missing JWT token for protected route", {
@@ -295,10 +315,13 @@ export const protectedRoute = (
       path: req.path,
       ip: req.ip,
       userAgent: req.get("User-Agent"),
+      jwtVerification: config.JWT_VERIFICATION_ENABLED ? "enabled" : "DISABLED",
     });
     // Step 1: JWT Authentication
     const authResult = authenticateJWT(req, res);
-    if (!authResult) return;
+    if (!authResult) {
+      return;
+    }
     const { payload, jwtToken } = authResult;
     // Step 2: Request Decryption (if needed)
     if (!decryptRequestIfNeeded(req, res, jwtToken, payload.userId)) return;
